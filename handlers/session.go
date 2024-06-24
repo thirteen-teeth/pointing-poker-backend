@@ -35,24 +35,19 @@ func NewSessionHandler(w http.ResponseWriter, r *http.Request) {
 
 // JoinSessionHandler handles a user joining a session
 func JoinSessionHandler(w http.ResponseWriter, r *http.Request) {
-	// Get the session ID and user ID from the URL
-	vars := mux.Vars(r)
-	sessionID := vars["sessionID"]
-	userID := vars["userID"]
-
+	// Get the session ID and user ID from the POST data
+	sessionID := r.FormValue("sessionID")
+	userID := r.FormValue("userID")
 	// Add the user to the session
 	SessionStore[sessionID] = append(SessionStore[sessionID], userID)
-
 	// Create a map for JSON response
 	resp := map[string]string{
 		"message":   "User joined session",
 		"sessionID": sessionID,
 		"userID":    userID,
 	}
-
 	// Set content-type to application/json
 	w.Header().Set("Content-Type", "application/json")
-
 	// Send the response
 	json.NewEncoder(w).Encode(resp)
 }
@@ -91,4 +86,50 @@ func generateSessionID() string {
 	b := make([]byte, 16)
 	rand.Read(b)
 	return hex.EncodeToString(b)
+}
+
+// VoteHandler handles a user voting in a session
+func VoteHandler(w http.ResponseWriter, r *http.Request) {
+	// Get the session ID, user ID, and vote from the URL
+	vars := mux.Vars(r)
+	sessionID := vars["sessionID"]
+	userID := vars["userID"]
+	vote := vars["vote"]
+
+	// Create a map for JSON response
+	resp := map[string]string{
+		"message":   "Vote submitted",
+		"sessionID": sessionID,
+		"userID":    userID,
+		"vote":      vote,
+	}
+
+	// Set content-type to application/json
+	w.Header().Set("Content-Type", "application/json")
+
+	// Send the response
+	json.NewEncoder(w).Encode(resp)
+}
+
+// ResultsHandler handles getting the results of a session
+func ResultsHandler(w http.ResponseWriter, r *http.Request) {
+	// Get the session ID from the URL
+	vars := mux.Vars(r)
+	sessionID := vars["sessionID"]
+
+	// Get the list of users in the session
+	users := SessionStore[sessionID]
+
+	// Create a map for JSON response
+	resp := map[string]interface{}{
+		"sessionID": sessionID,
+		"results":   make(map[string]string),
+		"users":     users,
+	}
+
+	// Set content-type to application/json
+	w.Header().Set("Content-Type", "application/json")
+
+	// Send the response
+	json.NewEncoder(w).Encode(resp)
 }
